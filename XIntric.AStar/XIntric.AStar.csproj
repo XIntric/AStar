@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Product>AStar</Product>
+    <Company>AStar</Company>
+    <Authors>Micael Fredriksson</Authors>
+    <PackageProjectUrl>https://github.com/XIntric/AStar</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/XIntric/AStar.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>AStar A*</PackageTags>
+    <Description>Simple A* (A-Star) library. Simply define your problem space, then traverse it. Supports multi-threaded traversal.
+Optimized for heavy node expansion calculations rather than node quantity.
+
+For examples, see github project.</Description>
+  </PropertyGroup>
+
+</Project>

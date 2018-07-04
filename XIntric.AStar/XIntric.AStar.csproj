@@ -14,6 +14,7 @@
 Optimized for heavy node expansion calculations rather than node quantity.
 
 For examples, see github project.</Description>
+    <PackageLicenseUrl>https://github.com/XIntric/AStar/blob/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
 </Project>

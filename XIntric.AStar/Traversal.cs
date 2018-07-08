@@ -26,26 +26,20 @@ namespace XIntric.AStar
                 Problem.Comparer);
         }
 
-        IProblem<TState, TCost> Problem;
-        IScenario<TState, TCost> Scenario;
 
         public Task<INode<TState,TCost>> Result => ResultSetter.Task;
-
-
-        CancellationTokenSource Cancelled = new CancellationTokenSource();
-        CancellationTokenSource GoalFound = new CancellationTokenSource();
-        CancellationTokenSource QueueDepleted = new CancellationTokenSource();
-        
-
         public event Action<INode<TState,TCost>> Diag_NodeTraversing;
         public event Action<INode<TState,TCost>> Diag_NodeTraversed;
 
+        public CancellationToken WorkToken => WorkTokenSource.Token;
+        CancellationTokenSource WorkTokenSource = new CancellationTokenSource();
 
 
 
 
         public async Task<INode<TState,TCost>> StepAsync()
         {
+            if (Result.IsCompleted) return Result.Result;
             try
             {
                 //System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: Step started.");
@@ -59,8 +53,8 @@ namespace XIntric.AStar
                     {
                         lock (ResultSetter)
                         {
-                            System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: Found goal node!.");
                             ResultSetter.SetResult(node);
+                            WorkTokenSource.Cancel();
                             return node;
                         }
                     }
@@ -82,7 +76,9 @@ namespace XIntric.AStar
             {
                 if (Result.IsCompleted) return Result.Result;
                 if (Result.IsFaulted) throw Result.Exception;
-                throw new MissingSolutionException();
+                var ex = new MissingSolutionException();
+                ResultSetter.TrySetException(ex);
+                throw ex;
             }
             catch(Exception e)
             {
@@ -138,6 +134,8 @@ namespace XIntric.AStar
                 return new Node.Primitive<TState, TCost>(Node, childstate, accumulatedcost, distance, totalcost);
             }
         }
+        IProblem<TState, TCost> Problem;
+        IScenario<TState, TCost> Scenario;
 
     }
 }

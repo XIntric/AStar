@@ -7,21 +7,21 @@ using System.Threading.Tasks;
 
 namespace XIntric.AStar
 {
-    class NodeRepository<TState,TDistance>
+    class NodeRepository<TState,TCost,TDistance>
     {
-        public NodeRepository(Node<TState, TDistance> firstitem, IComparer<TDistance> comparer)
+        public NodeRepository(INode<TState,TCost,TDistance> firstitem, IComparer<TCost> comparer)
         {
             Nodes.Add(firstitem);
             Comparer = comparer;
         }
 
 
-        public async Task<TRet> PerformWorkerOperationAsync<TRet>(Func<Node<TState,TDistance>, Task<TRet>> acquiredoperations)
+        public async Task<TRet> PerformWorkerOperationAsync<TRet>(Func<INode<TState,TCost,TDistance>, Task<TRet>> acquiredoperations)
         {
 
 
             //System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: Getting node.");
-            Node<TState, TDistance> myitem;
+            INode<TState,TCost,TDistance> myitem;
 
             await ConsumerLock.WaitAsync();
             bool hasconsumerlock = true;
@@ -65,7 +65,7 @@ namespace XIntric.AStar
 
 
             TaskCompletionSource<int> holder = new TaskCompletionSource<int>();
-            async Task<TRet> Worker(Node<TState,TDistance> n)
+            async Task<TRet> Worker(INode<TState,TCost,TDistance> n)
             {
                 await holder.Task;
                 return await acquiredoperations(n);
@@ -90,7 +90,7 @@ namespace XIntric.AStar
 
 
 
-        public bool Add(Node<TState,TDistance> node)
+        public bool Add(INode<TState,TCost,TDistance> node)
         {
             lock (ProducerLock)
             {
@@ -131,7 +131,7 @@ namespace XIntric.AStar
         SemaphoreSlim ConsumerLock = new SemaphoreSlim(1);
         object ProducerLock => Nodes;
 
-        async Task<Node<TState,TDistance>> GetNodeAsync()
+        async Task<INode<TState,TCost,TDistance>> GetNodeAsync()
         {
 
             //System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: GetNodeAsync: 1.");
@@ -191,11 +191,10 @@ namespace XIntric.AStar
                 : base("No more items left to acquire.") { }
         }
 
-        IComparer<TDistance> Comparer;
-        List<Node<TState, TDistance>> Nodes = new List<Node<TState, TDistance>>();
+        IComparer<TCost> Comparer;
+        List<INode<TState,TCost,TDistance>> Nodes = new List<INode<TState,TCost,TDistance>>();
         List<Task> WorkerTasks = new List<System.Threading.Tasks.Task>();
-        Dictionary<TState, TDistance> VisitedStates = new Dictionary<TState, TDistance>();
-            
+        Dictionary<TState, TCost> VisitedStates = new Dictionary<TState, TCost>();
     }
 
 }

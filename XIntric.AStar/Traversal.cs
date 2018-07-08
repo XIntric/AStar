@@ -8,34 +8,28 @@ using System.Threading.Tasks;
 namespace XIntric.AStar
 {
 
-    public delegate Task<IEnumerable<Node<TState,TDistance>>> ExpandNodeFunc<TState,TDistance>(Node<TState,TDistance> node);
-    public delegate TDistance SumCost<TDistance>(TDistance accumulatedcost, TDistance estimateddistance);
 
-    public class Traversal<TState,TDistance>
+
+    public class Traversal<TState,TCost,TDistance>
     {
         public Traversal(
-            ExpandNodeFunc<TState,TDistance> expandnode, 
-            SumCost<TDistance> sumcost,
-            Func<TDistance,TDistance,int> distancecomparer,
-            TState initstate,
-            TDistance initcost,
-            TDistance initestimateddistance,
-            TDistance goaldistance
+            IProblem<TState, TCost, TDistance> problem,
+            IScenario<TState, TDistance> scenario,
+            TState initstate
             )
         {
-            ExpandNode = expandnode;
-            SumCost = sumcost;
-            GoalDistance = goaldistance;
-            Comparer = new MyComparer(distancecomparer);
-            OpenNodes = new NodeRepository<TState,TDistance>(new Node<TState,TDistance>(null,initstate,initcost,initestimateddistance,sumcost), Comparer);
+            Problem = problem;
+            Scenario = scenario;
+            var initstateestimateddistance = scenario.GetDistance(initstate);
+            OpenNodes = new NodeRepository<TState, TCost, TDistance>(
+                new Node<TState, TCost, TDistance>(null, initstate, Problem.InitCost, initstateestimateddistance, Problem.GetTotalCost(Problem.InitCost, initstateestimateddistance)),
+                Problem.CostComparer);
         }
 
-        ExpandNodeFunc<TState, TDistance> ExpandNode;
-        SumCost<TDistance> SumCost;
-        TDistance GoalDistance;
-        IComparer<TDistance> Comparer;
+        IProblem<TState, TCost, TDistance> Problem;
+        IScenario<TState, TDistance> Scenario;
 
-        public Task<Node<TState,TDistance>> Result => ResultSetter.Task;
+        public Task<INode<TState,TCost,TDistance>> Result => ResultSetter.Task;
 
 
         CancellationTokenSource Cancelled = new CancellationTokenSource();
@@ -43,13 +37,13 @@ namespace XIntric.AStar
         CancellationTokenSource QueueDepleted = new CancellationTokenSource();
         
 
-        public event Action<Node<TState,TDistance>> Diag_NodeTraversing;
-        public event Action<Node<TState,TDistance>> Diag_NodeTraversed;
+        public event Action<INode<TState,TCost,TDistance>> Diag_NodeTraversing;
+        public event Action<INode<TState,TCost,TDistance>> Diag_NodeTraversed;
 
 
 
 
-        public async Task<Node<TState,TDistance>> StepAsync()
+        public async Task<INode<TState,TCost,TDistance>> StepAsync()
         {
             try
             {
@@ -60,7 +54,7 @@ namespace XIntric.AStar
                     async node =>
                 {
                     Diag_NodeTraversing?.Invoke(node);
-                    if (Comparer.Compare(node.EstimatedDistance,GoalDistance) <= 0) //Found a goal node
+                    if (Problem.DistanceComparer.Compare(node.EstimatedDistance,Scenario.AcceptedDistance) <= 0) //Found a goal node
                     {
                         lock (ResultSetter)
                         {
@@ -71,7 +65,7 @@ namespace XIntric.AStar
                     }
 
 
-                    var newnodes = (await ExpandNode(node)).ToList();
+                    var newnodes = (await Problem.ExpandNode(node)).ToList();
 
                     foreach(var newnode in newnodes)
                     {
@@ -83,7 +77,7 @@ namespace XIntric.AStar
                 });
 
             }
-            catch(NodeRepository<TState,TDistance>.QueueExhaustedException)
+            catch(NodeRepository<TState,TCost,TDistance>.QueueExhaustedException)
             {
                 if (Result.IsCompleted) return Result.Result;
                 if (Result.IsFaulted) throw Result.Exception;
@@ -97,8 +91,8 @@ namespace XIntric.AStar
 
         }
 
-        NodeRepository<TState,TDistance> OpenNodes;
-        TaskCompletionSource<Node<TState,TDistance>> ResultSetter = new TaskCompletionSource<Node<TState,TDistance>>();
+        NodeRepository<TState,TCost,TDistance> OpenNodes;
+        TaskCompletionSource<INode<TState,TCost,TDistance>> ResultSetter = new TaskCompletionSource<INode<TState,TCost,TDistance>>();
 
         public class MissingSolutionException : Exception
         {
@@ -107,22 +101,16 @@ namespace XIntric.AStar
 
         public class InternalErrorException : AggregateException
         {
-            public InternalErrorException(Node<TState,TDistance> currentnode, Exception subexception)
+            public InternalErrorException(INode<TState,TCost,TDistance> currentnode, Exception subexception)
                 : base("An internal exception was detected",subexception)
             {
                 CurrentNode = currentnode;
             }
 
-            public Node<TState,TDistance> CurrentNode { get; }
+            public INode<TState,TCost,TDistance> CurrentNode { get; }
 
         }
 
-        public class MyComparer : IComparer<TDistance>
-        {
-            public MyComparer(Func<TDistance,TDistance,int> cfunc) { CompareFunc = cfunc; }
-            Func<TDistance, TDistance, int> CompareFunc;
-            public int Compare(TDistance x, TDistance y) => CompareFunc(x, y);
-        }
 
     }
 }

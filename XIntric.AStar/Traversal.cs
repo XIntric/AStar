@@ -10,26 +10,26 @@ namespace XIntric.AStar
 
 
 
-    public class Traversal<TState,TCost,TDistance>
+    public class Traversal<TState,TCost>
     {
         public Traversal(
-            IProblem<TState, TCost, TDistance> problem,
-            IScenario<TState, TDistance> scenario,
+            IProblem<TState, TCost> problem,
+            IScenario<TState, TCost> scenario,
             TState initstate
             )
         {
             Problem = problem;
             Scenario = scenario;
             var initstateestimateddistance = scenario.GetDistance(initstate);
-            OpenNodes = new NodeRepository<TState, TCost, TDistance>(
-                new Node<TState, TCost, TDistance>(null, initstate, Problem.InitCost, initstateestimateddistance, Problem.GetTotalCost(Problem.InitCost, initstateestimateddistance)),
-                Problem.CostComparer);
+            OpenNodes = new NodeRepository<TState, TCost>(
+                new Node<TState, TCost>(null, initstate, Problem.InitCost, initstateestimateddistance, Problem.Accumulate(Problem.InitCost, initstateestimateddistance)),
+                Problem.Comparer);
         }
 
-        IProblem<TState, TCost, TDistance> Problem;
-        IScenario<TState, TDistance> Scenario;
+        IProblem<TState, TCost> Problem;
+        IScenario<TState, TCost> Scenario;
 
-        public Task<INode<TState,TCost,TDistance>> Result => ResultSetter.Task;
+        public Task<INode<TState,TCost>> Result => ResultSetter.Task;
 
 
         CancellationTokenSource Cancelled = new CancellationTokenSource();
@@ -37,13 +37,13 @@ namespace XIntric.AStar
         CancellationTokenSource QueueDepleted = new CancellationTokenSource();
         
 
-        public event Action<INode<TState,TCost,TDistance>> Diag_NodeTraversing;
-        public event Action<INode<TState,TCost,TDistance>> Diag_NodeTraversed;
+        public event Action<INode<TState,TCost>> Diag_NodeTraversing;
+        public event Action<INode<TState,TCost>> Diag_NodeTraversed;
 
 
 
 
-        public async Task<INode<TState,TCost,TDistance>> StepAsync()
+        public async Task<INode<TState,TCost>> StepAsync()
         {
             try
             {
@@ -54,7 +54,7 @@ namespace XIntric.AStar
                     async node =>
                 {
                     Diag_NodeTraversing?.Invoke(node);
-                    if (Problem.DistanceComparer.Compare(node.EstimatedDistance,Scenario.AcceptedDistance) <= 0) //Found a goal node
+                    if (Problem.Comparer.Compare(node.EstimatedDistance,Scenario.AcceptedDistance) <= 0) //Found a goal node
                     {
                         lock (ResultSetter)
                         {
@@ -77,7 +77,7 @@ namespace XIntric.AStar
                 });
 
             }
-            catch(NodeRepository<TState,TCost,TDistance>.QueueExhaustedException)
+            catch(NodeRepository<TState,TCost>.QueueExhaustedException)
             {
                 if (Result.IsCompleted) return Result.Result;
                 if (Result.IsFaulted) throw Result.Exception;
@@ -91,8 +91,8 @@ namespace XIntric.AStar
 
         }
 
-        NodeRepository<TState,TCost,TDistance> OpenNodes;
-        TaskCompletionSource<INode<TState,TCost,TDistance>> ResultSetter = new TaskCompletionSource<INode<TState,TCost,TDistance>>();
+        NodeRepository<TState,TCost> OpenNodes;
+        TaskCompletionSource<INode<TState,TCost>> ResultSetter = new TaskCompletionSource<INode<TState,TCost>>();
 
         public class MissingSolutionException : Exception
         {
@@ -101,13 +101,13 @@ namespace XIntric.AStar
 
         public class InternalErrorException : AggregateException
         {
-            public InternalErrorException(INode<TState,TCost,TDistance> currentnode, Exception subexception)
+            public InternalErrorException(INode<TState,TCost> currentnode, Exception subexception)
                 : base("An internal exception was detected",subexception)
             {
                 CurrentNode = currentnode;
             }
 
-            public INode<TState,TCost,TDistance> CurrentNode { get; }
+            public INode<TState,TCost> CurrentNode { get; }
 
         }
 

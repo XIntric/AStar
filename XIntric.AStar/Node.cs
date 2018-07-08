@@ -4,22 +4,21 @@ using System.Text;
 
 namespace XIntric.AStar
 {
-    public interface INode<TState,TCost,TDistance>
+    public interface INode<TState,TCost>
     {
-        INode<TState,TCost,TDistance> Parent { get; }
+        INode<TState,TCost> Parent { get; }
         TState State { get; }
         TCost AccumulatedCost { get; }
-        TDistance EstimatedDistance { get; }
+        TCost EstimatedDistance { get; }
         TCost TotalCost { get; }
     }
 
-    //Todo: CreateChild as extension method!
-    internal class Node<TState, TCost, TDistance> : INode<TState, TCost, TDistance>
+    internal class Node<TState, TCost> : INode<TState, TCost>
     {
-        public Node(Node<TState,TCost,TDistance> parent,
+        public Node(Node<TState,TCost> parent,
             TState state,
             TCost accumulatedcost,
-            TDistance estimateddistance,
+            TCost estimateddistance,
             TCost totalcost)
         {
             Parent = parent;
@@ -29,13 +28,13 @@ namespace XIntric.AStar
             TotalCost = totalcost;
         }
 
-        public INode<TState, TCost, TDistance> Parent { get; }
+        public INode<TState, TCost> Parent { get; }
         public TState State { get; }
         public TCost AccumulatedCost { get; }
-        public TDistance EstimatedDistance { get; }
+        public TCost EstimatedDistance { get; }
         public TCost TotalCost { get; }
 
-        public override bool Equals(object obj) => (obj as INode<TState, TCost, TDistance>)?.State?.Equals(State) ?? false;
+        public override bool Equals(object obj) => (obj as INode<TState, TCost>)?.State?.Equals(State) ?? false;
         public override int GetHashCode() => State.GetHashCode();
 
     }

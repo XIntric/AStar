@@ -5,23 +5,21 @@ using System.Threading.Tasks;
 
 namespace XIntric.AStar
 {
-    public interface IProblem<TState,TCost,TDistance>
+    public interface IProblem<TState,TCost>
     {
-        Task<IEnumerable<INode<TState, TCost, TDistance>>> ExpandNode(INode<TState, TCost, TDistance> parent);
-        IComparer<TCost> CostComparer { get; }
-        IComparer<TDistance> DistanceComparer { get; }
+        Task<IEnumerable<INode<TState, TCost>>> ExpandNode(INode<TState, TCost> parent);
+        IComparer<TCost> Comparer { get; }
         TCost Accumulate(TCost accumulated, TCost addcost);
-        TCost GetTotalCost(TCost accumulated, TDistance estimateddistance);
         TCost InitCost { get; }
     }
 
     public static class Problem
     {
-        public static Traversal<TState, TCost, TDistance> CreateTraversal<TState, TCost, TDistance>(
-            this IProblem<TState, TCost, TDistance> problem,
-            IScenario<TState, TDistance> scenario,
+        public static Traversal<TState, TCost> CreateTraversal<TState, TCost>(
+            this IProblem<TState, TCost> problem,
+            IScenario<TState, TCost> scenario,
             TState initstate
             )
-            => new Traversal<TState, TCost, TDistance>(problem, scenario,initstate);
+            => new Traversal<TState, TCost>(problem, scenario,initstate);
     }
 }

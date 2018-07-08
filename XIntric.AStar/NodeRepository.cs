@@ -7,21 +7,21 @@ using System.Threading.Tasks;
 
 namespace XIntric.AStar
 {
-    class NodeRepository<TState,TCost,TDistance>
+    class NodeRepository<TState,TCost>
     {
-        public NodeRepository(INode<TState,TCost,TDistance> firstitem, IComparer<TCost> comparer)
+        public NodeRepository(INode<TState,TCost> firstitem, IComparer<TCost> comparer)
         {
             Nodes.Add(firstitem);
             Comparer = comparer;
         }
 
 
-        public async Task<TRet> PerformWorkerOperationAsync<TRet>(Func<INode<TState,TCost,TDistance>, Task<TRet>> acquiredoperations)
+        public async Task<TRet> PerformWorkerOperationAsync<TRet>(Func<INode<TState,TCost>, Task<TRet>> acquiredoperations)
         {
 
 
             //System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: Getting node.");
-            INode<TState,TCost,TDistance> myitem;
+            INode<TState,TCost> myitem;
 
             await ConsumerLock.WaitAsync();
             bool hasconsumerlock = true;
@@ -65,7 +65,7 @@ namespace XIntric.AStar
 
 
             TaskCompletionSource<int> holder = new TaskCompletionSource<int>();
-            async Task<TRet> Worker(INode<TState,TCost,TDistance> n)
+            async Task<TRet> Worker(INode<TState,TCost> n)
             {
                 await holder.Task;
                 return await acquiredoperations(n);
@@ -90,7 +90,7 @@ namespace XIntric.AStar
 
 
 
-        public bool Add(INode<TState,TCost,TDistance> node)
+        public bool Add(INode<TState,TCost> node)
         {
             lock (ProducerLock)
             {
@@ -131,7 +131,7 @@ namespace XIntric.AStar
         SemaphoreSlim ConsumerLock = new SemaphoreSlim(1);
         object ProducerLock => Nodes;
 
-        async Task<INode<TState,TCost,TDistance>> GetNodeAsync()
+        async Task<INode<TState,TCost>> GetNodeAsync()
         {
 
             //System.Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: GetNodeAsync: 1.");
@@ -192,7 +192,7 @@ namespace XIntric.AStar
         }
 
         IComparer<TCost> Comparer;
-        List<INode<TState,TCost,TDistance>> Nodes = new List<INode<TState,TCost,TDistance>>();
+        List<INode<TState,TCost>> Nodes = new List<INode<TState,TCost>>();
         List<Task> WorkerTasks = new List<System.Threading.Tasks.Task>();
         Dictionary<TState, TCost> VisitedStates = new Dictionary<TState, TCost>();
     }

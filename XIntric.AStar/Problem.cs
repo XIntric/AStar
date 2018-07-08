@@ -7,7 +7,7 @@ namespace XIntric.AStar
 {
     public interface IProblem<TState,TCost>
     {
-        Task<IEnumerable<INode<TState, TCost>>> ExpandNode(INode<TState, TCost> parent);
+        Task<IEnumerable<INode<TState, TCost>>> ExpandNode(Traversal<TState,TCost>.INodeExpansion parent);
         IComparer<TCost> Comparer { get; }
         TCost Accumulate(TCost accumulated, TCost addcost);
         TCost InitCost { get; }

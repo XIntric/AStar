@@ -43,6 +43,7 @@ namespace XIntric.AStar
 
 
 
+
         public async Task<INode<TState,TCost>> StepAsync()
         {
             try
@@ -65,7 +66,7 @@ namespace XIntric.AStar
                     }
 
 
-                    var newnodes = (await Problem.ExpandNode(node)).ToList();
+                    var newnodes = (await Problem.ExpandNode(new NodeExpansionImplementation(this,node))).ToList();
 
                     foreach(var newnode in newnodes)
                     {
@@ -111,6 +112,32 @@ namespace XIntric.AStar
 
         }
 
+
+        public interface INodeExpansion
+        {
+            INode<TState,TCost> Node { get; }
+            INode<TState, TCost> CreateChild(TState childstate, TCost stepcost);
+        }
+
+        class NodeExpansionImplementation : INodeExpansion
+        {
+            public NodeExpansionImplementation(Traversal<TState,TCost> traversal, INode<TState,TCost> node)
+            {
+                Traversal = traversal;
+                Node = node;
+            }
+
+            Traversal<TState, TCost> Traversal;
+            public INode<TState, TCost> Node { get; }
+
+            public INode<TState, TCost> CreateChild(TState childstate, TCost stepcost)
+            {
+                var accumulatedcost = Traversal.Problem.Accumulate(Node.AccumulatedCost, stepcost);
+                var distance = Traversal.Scenario.GetDistance(childstate);
+                var totalcost = Traversal.Problem.Accumulate(accumulatedcost, distance);
+                return new Node.Primitive<TState, TCost>(Node, childstate, accumulatedcost, distance, totalcost);
+            }
+        }
 
     }
 }

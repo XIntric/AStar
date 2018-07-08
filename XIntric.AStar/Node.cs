@@ -15,7 +15,7 @@ namespace XIntric.AStar
 
     public static class Node
     {
-        public static INode<TState, TCost> CreateChild<TState, TCost>(this INode<TState, TCost> parent,
+        public static INode<TState, TCost> Create<TState, TCost>(INode<TState, TCost> parent,
             TState state,
             TCost accumulatedcost,
             TCost estimateddistance,

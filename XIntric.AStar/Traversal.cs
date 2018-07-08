@@ -22,7 +22,7 @@ namespace XIntric.AStar
             Scenario = scenario;
             var initstateestimateddistance = scenario.GetDistance(initstate);
             OpenNodes = new NodeRepository<TState, TCost>(
-                new Node<TState, TCost>(null, initstate, Problem.InitCost, initstateestimateddistance, Problem.Accumulate(Problem.InitCost, initstateestimateddistance)),
+                new Node.Primitive<TState, TCost>(null, initstate, Problem.InitCost, initstateestimateddistance, Problem.Accumulate(Problem.InitCost, initstateestimateddistance)),
                 Problem.Comparer);
         }
 

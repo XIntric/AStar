@@ -13,31 +13,43 @@ namespace XIntric.AStar
         TCost TotalCost { get; }
     }
 
-    internal class Node<TState, TCost> : INode<TState, TCost>
+    public static class Node
     {
-        public Node(Node<TState,TCost> parent,
+        public static INode<TState, TCost> CreateChild<TState, TCost>(this INode<TState, TCost> parent,
             TState state,
             TCost accumulatedcost,
             TCost estimateddistance,
             TCost totalcost)
+            => new Primitive<TState, TCost>(parent, state, accumulatedcost, estimateddistance, totalcost);
+
+        public class Primitive<TState, TCost> : INode<TState, TCost>
         {
-            Parent = parent;
-            State = state;
-            AccumulatedCost = accumulatedcost;
-            EstimatedDistance = estimateddistance;
-            TotalCost = totalcost;
+            public Primitive(INode<TState, TCost> parent,
+                TState state,
+                TCost accumulatedcost,
+                TCost estimateddistance,
+                TCost totalcost)
+            {
+                Parent = parent;
+                State = state;
+                AccumulatedCost = accumulatedcost;
+                EstimatedDistance = estimateddistance;
+                TotalCost = totalcost;
+            }
+
+            public INode<TState, TCost> Parent { get; }
+            public TState State { get; }
+            public TCost AccumulatedCost { get; }
+            public TCost EstimatedDistance { get; }
+            public TCost TotalCost { get; }
+
+            public override bool Equals(object obj) => (obj as INode<TState, TCost>)?.State?.Equals(State) ?? false;
+            public override int GetHashCode() => State.GetHashCode();
+
         }
 
-        public INode<TState, TCost> Parent { get; }
-        public TState State { get; }
-        public TCost AccumulatedCost { get; }
-        public TCost EstimatedDistance { get; }
-        public TCost TotalCost { get; }
-
-        public override bool Equals(object obj) => (obj as INode<TState, TCost>)?.State?.Equals(State) ?? false;
-        public override int GetHashCode() => State.GetHashCode();
-
     }
+
 
 
     //public class OldNode<TState,TDistance>
